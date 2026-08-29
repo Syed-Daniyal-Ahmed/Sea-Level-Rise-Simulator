@@ -1,26 +1,115 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #eaf6ff;
+  --foreground: #0f172a;
+  --panel: rgba(255, 255, 255, 0.8);
+  --panel-border: rgba(14, 116, 144, 0.2);
+  --accent: #0f766e;
+  --shadow: rgba(15, 23, 42, 0.12);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: linear-gradient(180deg, #eaf6ff 0%, #dbeafe 100%);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.page-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+}
+
+.panel {
+  width: min(100%, 980px);
+  background: var(--panel);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--panel-border);
+  border-radius: 20px;
+  box-shadow: 0 18px 40px var(--shadow);
+  padding: 20px 20px 18px;
+}
+
+.panel-header {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.panel-header h1 {
+  margin: 0;
+  font-size: clamp(1.5rem, 2vw, 2.2rem);
+  font-weight: 700;
+}
+
+.map-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.map-heading {
+  letter-spacing: 0.12em;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-align: center;
+}
+
+.map-subtitle {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #334155;
+}
+
+.map-shell {
+  width: 100%;
+  height: 520px;
+  margin-top: 8px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(15, 118, 110, 0.2);
+}
+
+.map-frame {
+  width: 100%;
+  height: 100%;
+  background: #dbeafe;
+}
+
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+}
+
+.coordinates-panel {
+  margin-top: 18px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: rgba(14, 116, 144, 0.06);
+  border: 1px solid rgba(14, 116, 144, 0.12);
+  color: #0f172a;
+}
+
+.coordinates-panel p {
+  margin: 4px 0;
+  font-size: 1rem;
+}
+
+.coordinates-panel p:first-child {
+  font-weight: 700;
 }
