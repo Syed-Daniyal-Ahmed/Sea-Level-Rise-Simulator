@@ -142,3 +142,99 @@ body {
 .coordinates-panel p:first-child {
   font-weight: 700;
 }
+
+.elevation-panel {
+  margin-top: 16px;
+  padding: 14px 18px;
+  border: 1px solid rgba(14, 116, 144, 0.16);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.elevation-button {
+  padding: 9px 14px;
+  border: 0;
+  border-radius: 7px;
+  background: #0f766e;
+  color: #ffffff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.elevation-button:hover:not(:disabled) {
+  background: #115e59;
+}
+
+.elevation-button:focus-visible {
+  outline: 3px solid rgba(14, 116, 144, 0.4);
+  outline-offset: 2px;
+}
+
+.elevation-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.elevation-results p,
+.elevation-error {
+  margin: 9px 0 0;
+}
+
+.elevation-error {
+  color: #b42318;
+}
+
+.sea-level-control {
+  margin-top: 18px;
+  max-width: 560px;
+}
+
+.sea-level-control > label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.sea-level-range {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  color: #334155;
+  font-size: 0.9rem;
+}
+
+.sea-level-range input {
+  width: 100%;
+  accent-color: #0284c7;
+  cursor: pointer;
+}
+
+.sea-level-control > p {
+  font-weight: 700;
+}
+
+.sea-level-statistics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0 16px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(14, 116, 144, 0.16);
+}
+
+.sea-level-statistics p {
+  margin: 5px 0;
+}
+
+@media (max-width: 640px) {
+  .map-shell {
+    height: min(62vh, 520px);
+    min-height: 340px;
+  }
+
+  .panel {
+    padding: 16px 12px;
+  }
+}
