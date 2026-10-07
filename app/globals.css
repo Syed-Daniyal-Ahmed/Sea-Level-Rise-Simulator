@@ -190,10 +190,38 @@ body {
   max-width: 560px;
 }
 
-.sea-level-control > label {
-  display: block;
+.sea-level-mode {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+  margin: 0 0 18px;
+  padding: 0;
+  border: 0;
+}
+
+.sea-level-mode legend,
+.sea-level-range-control > label {
   margin-bottom: 8px;
   font-weight: 700;
+}
+
+.sea-level-mode legend {
+  padding: 0;
+}
+
+.sea-level-mode label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+}
+
+.sea-level-mode input {
+  accent-color: #0f766e;
+}
+
+.sea-level-range-control > label {
+  display: block;
 }
 
 .sea-level-range {
@@ -211,7 +239,8 @@ body {
   cursor: pointer;
 }
 
-.sea-level-control > p {
+.sea-level-range-control > p,
+.current-sea-level-rise {
   font-weight: 700;
 }
 

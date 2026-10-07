@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import { useState } from 'react';
 
 const GRID_SIZE = 20;
+const SEA_LEVEL_RISE_COEFFICIENT = 2.4;
 
 const Map = dynamic(() => import('./components/Map'), {
   ssr: false,
@@ -21,6 +22,8 @@ export default function Home() {
   const [isLoadingElevations, setIsLoadingElevations] = useState(false);
   const [elevationError, setElevationError] = useState('');
   const [seaLevelRise, setSeaLevelRise] = useState(0);
+  const [seaLevelMode, setSeaLevelMode] = useState('manual');
+  const [temperatureRise, setTemperatureRise] = useState(0);
 
   async function fetchElevations() {
     if (!lockedBounds || isLoadingElevations) return;
@@ -88,8 +91,12 @@ export default function Home() {
   const elevations = elevationGrid?.flat() ?? [];
   const minimumElevation = elevations.length ? Math.min(...elevations) : null;
   const maximumElevation = elevations.length ? Math.max(...elevations) : null;
+  const thermalSeaLevelRise = SEA_LEVEL_RISE_COEFFICIENT * temperatureRise;
+  const activeSeaLevelRise = seaLevelMode === 'temperature'
+    ? thermalSeaLevelRise
+    : seaLevelRise;
   const submergedCells = gridCells.filter(
-    (cell) => Number.isFinite(cell.elevation) && cell.elevation <= seaLevelRise,
+    (cell) => Number.isFinite(cell.elevation) && cell.elevation <= activeSeaLevelRise,
   );
   const submergedPercentage = gridCells.length
     ? (submergedCells.length / gridCells.length) * 100
@@ -119,7 +126,7 @@ export default function Home() {
               }
             }}
             samplePoints={gridCells}
-            seaLevelRise={elevationGrid ? seaLevelRise : null}
+            seaLevelRise={elevationGrid ? activeSeaLevelRise : null}
           />
         </section>
 
@@ -141,21 +148,70 @@ export default function Home() {
                 <p>Sample points: {gridCells.length}</p>
                 <p>Minimum: {minimumElevation.toFixed(2)} m · Maximum: {maximumElevation.toFixed(2)} m</p>
                 <div className="sea-level-control">
-                  <label htmlFor="sea-level-rise">Sea Level Rise</label>
-                  <div className="sea-level-range">
-                    <span>0.0 m</span>
-                    <input
-                      id="sea-level-rise"
-                      type="range"
-                      min="0"
-                      max="450"
-                      step="3"
-                      value={seaLevelRise}
-                      onChange={(event) => setSeaLevelRise(Number(event.target.value))}
-                    />
-                    <span>450.0 m</span>
-                  </div>
-                  <p>Current rise: {seaLevelRise.toFixed(1)} m</p>
+                  <fieldset className="sea-level-mode">
+                    <legend>Sea-level mode</legend>
+                    <label>
+                      <input
+                        type="radio"
+                        name="sea-level-mode"
+                        value="manual"
+                        checked={seaLevelMode === 'manual'}
+                        onChange={() => setSeaLevelMode('manual')}
+                      />
+                      Manual Sea Level
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        name="sea-level-mode"
+                        value="temperature"
+                        checked={seaLevelMode === 'temperature'}
+                        onChange={() => setSeaLevelMode('temperature')}
+                      />
+                      Temperature Rise
+                    </label>
+                  </fieldset>
+
+                  {seaLevelMode === 'manual' ? (
+                    <div className="sea-level-range-control">
+                      <label htmlFor="sea-level-rise">Manual Sea Level</label>
+                      <div className="sea-level-range">
+                        <span>0.0 m</span>
+                        <input
+                          id="sea-level-rise"
+                          type="range"
+                          min="0"
+                          max="450"
+                          step="3"
+                          value={seaLevelRise}
+                          onChange={(event) => setSeaLevelRise(Number(event.target.value))}
+                        />
+                        <span>450.0 m</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="sea-level-range-control">
+                      <label htmlFor="temperature-rise">Temperature Rise</label>
+                      <div className="sea-level-range">
+                        <span>0.0°C</span>
+                        <input
+                          id="temperature-rise"
+                          type="range"
+                          min="0"
+                          max="5"
+                          step="0.1"
+                          value={temperatureRise}
+                          onChange={(event) => setTemperatureRise(Number(event.target.value))}
+                        />
+                        <span>5.0°C</span>
+                      </div>
+                      <p>Temperature Rise: {temperatureRise.toFixed(1)}°C</p>
+                      <p>Estimated Sea Level Rise: {thermalSeaLevelRise.toFixed(1)} m</p>
+                    </div>
+                  )}
+                  <p className="current-sea-level-rise">
+                    Current rise: {activeSeaLevelRise.toFixed(1)} m
+                  </p>
                 </div>
                 <div className="sea-level-statistics">
                   <p>Submerged cells: {submergedCells.length} / {gridCells.length}</p>
