@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { CircleMarker, MapContainer, Rectangle, TileLayer, useMap, useMapEvents } from 'react-leaflet';
+import { CircleMarker, MapContainer, Polyline, Rectangle, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
 function MapClickHandler({ onLocationChange }) {
@@ -50,9 +50,57 @@ export default function Map({
   onViewportLockChange,
   samplePoints = [],
   seaLevelRise = null,
+  submergedCells = [],
 }) {
   const [isViewportLocked, setIsViewportLocked] = useState(false);
   const mapRef = useRef(null);
+  const cellsByIndex = Object.create(null);
+  const submergedByIndex = Object.create(null);
+
+  samplePoints.forEach((point) => {
+    cellsByIndex[`${point.row}:${point.column}`] = point;
+  });
+  submergedCells.forEach((point) => {
+    submergedByIndex[`${point.row}:${point.column}`] = true;
+  });
+
+  const gridEdges = [];
+  if (seaLevelRise !== null && samplePoints.length) {
+    const maxRow = Math.max(...samplePoints.map(({ row }) => row));
+    const maxColumn = Math.max(...samplePoints.map(({ column }) => column));
+
+    samplePoints.forEach((point) => {
+      const key = `${point.row}:${point.column}`;
+      const isSubmerged = Boolean(submergedByIndex[key]);
+      const aboveKey = `${point.row - 1}:${point.column}`;
+      const leftKey = `${point.row}:${point.column - 1}`;
+
+      if (!cellsByIndex[aboveKey] || !(isSubmerged && submergedByIndex[aboveKey])) {
+        gridEdges.push({
+          key: `top-${key}`,
+          positions: [[point.north, point.west], [point.north, point.east]],
+        });
+      }
+      if (!cellsByIndex[leftKey] || !(isSubmerged && submergedByIndex[leftKey])) {
+        gridEdges.push({
+          key: `left-${key}`,
+          positions: [[point.south, point.west], [point.north, point.west]],
+        });
+      }
+      if (point.row === maxRow) {
+        gridEdges.push({
+          key: `bottom-${key}`,
+          positions: [[point.south, point.west], [point.south, point.east]],
+        });
+      }
+      if (point.column === maxColumn) {
+        gridEdges.push({
+          key: `right-${key}`,
+          positions: [[point.south, point.east], [point.north, point.east]],
+        });
+      }
+    });
+  }
 
   function handleLockChange(bounds) {
     setIsViewportLocked(Boolean(bounds));
@@ -94,27 +142,32 @@ export default function Map({
         <ViewportLock locked={isViewportLocked} />
         <MapInstance mapRef={mapRef} />
         <MapClickHandler onLocationChange={onLocationChange} />
-        {seaLevelRise !== null && samplePoints
-          .filter((point) => Number.isFinite(point.elevation) && point.elevation <= seaLevelRise)
+        {seaLevelRise !== null && submergedCells
           .map((point) => (
             <Rectangle
               key={`submerged-${point.row}-${point.column}`}
               bounds={[[point.south, point.west], [point.north, point.east]]}
               pathOptions={{
-                color: '#0369a1',
-                weight: 1,
-                opacity: 0.9,
-                fillColor: '#38bdf8',
-                fillOpacity: 0.48,
+                stroke: false,
+                fillColor: '#27689d',
+                fillOpacity: 0.44,
               }}
               interactive={false}
             />
           ))}
+        {gridEdges.map((edge) => (
+          <Polyline
+            key={edge.key}
+            positions={edge.positions}
+            pathOptions={{ color: '#315f87', weight: 1, opacity: 0.42 }}
+            interactive={false}
+          />
+        ))}
         {samplePoints.map((point) => (
           <CircleMarker
             key={`${point.row}-${point.column}`}
             center={[point.lat, point.lng]}
-            radius={3}
+            radius={2}
             pathOptions={{ color: '#b42318', fillColor: '#f04438', fillOpacity: 0.9, weight: 1 }}
             interactive={false}
           />

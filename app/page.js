@@ -155,6 +155,7 @@ export default function Home() {
             }}
             samplePoints={gridCells}
             seaLevelRise={loadedGridResolution === gridResolution ? activeSeaLevelRise : null}
+            submergedCells={submergedCells}
           />
         </section>
 
