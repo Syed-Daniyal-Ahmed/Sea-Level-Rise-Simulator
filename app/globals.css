@@ -151,6 +151,50 @@ body {
   background: rgba(255, 255, 255, 0.72);
 }
 
+.grid-resolution-control {
+  display: grid;
+  grid-template-columns: max-content minmax(180px, 260px);
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 12px;
+}
+
+.grid-resolution-control label {
+  margin: 0;
+  color: #0f172a;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.grid-resolution-control select {
+  min-height: 38px;
+  padding: 7px 10px;
+  border: 1px solid rgba(14, 116, 144, 0.28);
+  border-radius: 7px;
+  background: #ffffff;
+  color: #0f172a;
+  font: inherit;
+}
+
+.grid-resolution-control select:focus-visible {
+  outline: 3px solid rgba(14, 116, 144, 0.3);
+  outline-offset: 2px;
+}
+
+.grid-resolution-control select:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.grid-resolution-control p {
+  grid-column: 2;
+  margin: 0;
+  color: #334155;
+  font-size: 0.9rem;
+}
+
 .elevation-button {
   padding: 9px 14px;
   border: 0;
@@ -265,5 +309,13 @@ body {
 
   .panel {
     padding: 16px 12px;
+  }
+
+  .grid-resolution-control {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .grid-resolution-control p {
+    grid-column: 1;
   }
 }

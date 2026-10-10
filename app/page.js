@@ -1,9 +1,9 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
-const GRID_SIZE = 20;
+const GRID_RESOLUTIONS = [20, 40];
 const SEA_LEVEL_RISE_COEFFICIENT = 2.4;
 
 const Map = dynamic(() => import('./components/Map'), {
@@ -16,24 +16,30 @@ export default function Home() {
     lat: null,
     lng: null,
   });
+  const [gridResolution, setGridResolution] = useState(20);
   const [lockedBounds, setLockedBounds] = useState(null);
   const [gridCells, setGridCells] = useState([]);
   const [elevationGrid, setElevationGrid] = useState(null);
+  const [loadedGridResolution, setLoadedGridResolution] = useState(null);
   const [isLoadingElevations, setIsLoadingElevations] = useState(false);
   const [elevationError, setElevationError] = useState('');
   const [seaLevelRise, setSeaLevelRise] = useState(0);
   const [seaLevelMode, setSeaLevelMode] = useState('manual');
   const [temperatureRise, setTemperatureRise] = useState(0);
+  const requestInFlight = useRef(false);
+  const elevationRequestId = useRef(0);
+  const samplePointCount = gridResolution * gridResolution;
 
   async function fetchElevations() {
-    if (!lockedBounds || isLoadingElevations) return;
+    if (!lockedBounds || requestInFlight.current) return;
 
-    const latitudeStep = (lockedBounds.north - lockedBounds.south) / GRID_SIZE;
-    const longitudeStep = (lockedBounds.east - lockedBounds.west) / GRID_SIZE;
+    const requestId = ++elevationRequestId.current;
+    const latitudeStep = (lockedBounds.north - lockedBounds.south) / gridResolution;
+    const longitudeStep = (lockedBounds.east - lockedBounds.west) / gridResolution;
     const cells = [];
 
-    for (let row = 0; row < GRID_SIZE; row += 1) {
-      for (let column = 0; column < GRID_SIZE; column += 1) {
+    for (let row = 0; row < gridResolution; row += 1) {
+      for (let column = 0; column < gridResolution; column += 1) {
         cells.push({
           row,
           column,
@@ -47,8 +53,10 @@ export default function Home() {
       }
     }
 
-    setGridCells(cells);
+    requestInFlight.current = true;
+    setGridCells([]);
     setElevationGrid(null);
+    setLoadedGridResolution(null);
     setElevationError('');
     setSeaLevelRise(0);
     setIsLoadingElevations(true);
@@ -60,6 +68,7 @@ export default function Home() {
         body: JSON.stringify({ locations: cells.map(({ lat, lng }) => ({ lat, lng })) }),
       });
       const data = await response.json();
+      if (requestId !== elevationRequestId.current) return;
 
       if (!response.ok) {
         const details = data.details ? ` ${data.details}` : '';
@@ -73,7 +82,7 @@ export default function Home() {
         ...cell,
         elevation: data.results[index].elevation,
       }));
-      const grid = Array.from({ length: GRID_SIZE }, (_, row) =>
+      const grid = Array.from({ length: gridResolution }, (_, row) =>
         populatedCells
           .filter((cell) => cell.row === row)
           .map((cell) => cell.elevation),
@@ -81,11 +90,28 @@ export default function Home() {
 
       setGridCells(populatedCells);
       setElevationGrid(grid);
+      setLoadedGridResolution(gridResolution);
     } catch (error) {
-      setElevationError(error.message || 'Unable to load elevation data.');
+      if (requestId === elevationRequestId.current) {
+        setElevationError(error.message || 'Unable to load elevation data.');
+      }
     } finally {
-      setIsLoadingElevations(false);
+      if (requestId === elevationRequestId.current) {
+        requestInFlight.current = false;
+        setIsLoadingElevations(false);
+      }
     }
+  }
+
+  function handleGridResolutionChange(event) {
+    const nextResolution = Number(event.target.value);
+    if (!GRID_RESOLUTIONS.includes(nextResolution)) return;
+    setGridResolution(nextResolution);
+    setGridCells([]);
+    setElevationGrid(null);
+    setLoadedGridResolution(null);
+    setElevationError('');
+    setSeaLevelRise(0);
   }
 
   const elevations = elevationGrid?.flat() ?? [];
@@ -117,21 +143,36 @@ export default function Home() {
             zoom={2}
             onLocationChange={setSelectedLocation}
             onViewportLockChange={(bounds) => {
+              elevationRequestId.current += 1;
+              requestInFlight.current = false;
+              setIsLoadingElevations(false);
               setLockedBounds(bounds);
-              if (bounds) {
-                setGridCells([]);
-                setElevationGrid(null);
-                setElevationError('');
-                setSeaLevelRise(0);
-              }
+              setGridCells([]);
+              setElevationGrid(null);
+              setLoadedGridResolution(null);
+              setElevationError('');
+              setSeaLevelRise(0);
             }}
             samplePoints={gridCells}
-            seaLevelRise={elevationGrid ? activeSeaLevelRise : null}
+            seaLevelRise={loadedGridResolution === gridResolution ? activeSeaLevelRise : null}
           />
         </section>
 
         {lockedBounds && (
           <section className="elevation-panel" aria-live="polite">
+            <div className="grid-resolution-control">
+              <label htmlFor="grid-resolution">Grid resolution</label>
+              <select
+                id="grid-resolution"
+                value={gridResolution}
+                onChange={handleGridResolutionChange}
+                disabled={isLoadingElevations}
+              >
+                <option value={20}>20 × 20 · faster</option>
+                <option value={40}>40 × 40 · finer detail</option>
+              </select>
+              <p>{gridResolution} × {gridResolution} grid · {samplePointCount.toLocaleString()} elevation points</p>
+            </div>
             <button
               type="button"
               className="elevation-button"
@@ -141,10 +182,10 @@ export default function Home() {
               {isLoadingElevations ? 'Fetching elevations...' : 'Fetch Elevation'}
             </button>
             {elevationError && <p className="elevation-error" role="alert">{elevationError}</p>}
-            {elevationGrid && (
+            {loadedGridResolution === gridResolution && elevationGrid && (
               <div className="elevation-results">
                 <p><strong>Elevation data loaded</strong></p>
-                <p>Grid: {GRID_SIZE} × {GRID_SIZE}</p>
+                <p>Grid: {loadedGridResolution} × {loadedGridResolution}</p>
                 <p>Sample points: {gridCells.length}</p>
                 <p>Minimum: {minimumElevation.toFixed(2)} m · Maximum: {maximumElevation.toFixed(2)} m</p>
                 <div className="sea-level-control">
